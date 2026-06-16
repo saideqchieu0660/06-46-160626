@@ -390,16 +390,17 @@ const safeSetItem = (key: string, value: string) => {
                                 </button>
                                 <button
                                   onClick={() => {
-                                    const linksText = `📚 Danh mục: ${subject}\n\n` + subjectDecks.map(deck => `- ${deck.title}:\n  ${window.location.origin}/study/${deck.id}`).join('\n\n');
-                                    navigator.clipboard.writeText(linksText).then(() => {
-                                      toast.success("Đã sao chép link danh mục!", {
-                                        description: "Bây giờ bạn có thể dán (Paste) để gửi cho học viên.",
-                                      });
-                                    }).catch((err) => {
-                                      console.error("Lỗi khi copy: ", err);
-                                      toast.error("Không thể sao chép, vui lòng thử lại.");
+                                  const categoryUrl = `${window.location.origin}/category/${encodeURIComponent(subject)}`;
+                                  const shareText = `📚 Danh mục: ${subject}\n👉 Truy cập toàn bộ thẻ: ${categoryUrl}\n\nCác bộ đang có:\n` + subjectDecks.map(deck => `- ${deck.title}`).join('\n');
+                                  navigator.clipboard.writeText(shareText).then(() => {
+                                    toast.success("Đã sao chép link danh mục!", {
+                                      description: "Bây giờ bạn có thể dán (Paste) để gửi cho học viên.",
                                     });
-                                  }}
+                                  }).catch((err) => {
+                                    console.error("Lỗi khi copy: ", err);
+                                    toast.error("Không thể sao chép, vui lòng thử lại.");
+                                  });
+                                }}
                                   className="text-zinc-400 hover:text-blue-500 p-1.5 rounded-lg hover:bg-blue-100 dark:hover:bg-zinc-800 transition"
                                   title="Chia sẻ toàn bộ đường link danh mục này"
                                 >
@@ -550,7 +551,7 @@ const safeSetItem = (key: string, value: string) => {
                                 </div>
                               </div>
                               
-                              <Link to={`/study/${deck.id}`} className="btn-3d-primary w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center shrink-0 min-w-[64px] min-h-[64px] shadow-xl border-2">
+                              <Link to={`/study/${deck.id}`} className="btn-3d-primary w-16 h-16 sm:w-20 sm:h-20 !rounded-full flex items-center justify-center shrink-0 min-w-[64px] min-h-[64px] shadow-xl border-2">
                                 <Play className="w-8 h-8 sm:w-10 sm:h-10 ml-1.5" />
                               </Link>
                             </div>
@@ -619,7 +620,7 @@ const safeSetItem = (key: string, value: string) => {
                           </div>
                         </div>
                         
-                        <Link to={`/study/${deck.id}`} className="btn-3d-primary w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center shrink-0 min-w-[64px] min-h-[64px] shadow-xl border-2">
+                        <Link to={`/study/${deck.id}`} className="btn-3d-primary w-16 h-16 sm:w-20 sm:h-20 !rounded-full flex items-center justify-center shrink-0 min-w-[64px] min-h-[64px] shadow-xl border-2">
                           <Play className="w-8 h-8 sm:w-10 sm:h-10 ml-1.5" />
                         </Link>
                       </div>

@@ -435,7 +435,32 @@ function getGeminiClient(): { ai: any, state: KeyState } {
     throw new Error("Google Gemini API tạm thời bị ngắt bởi quản trị viên để bảo toàn tài nguyên.");
   }
   if (geminiKeyStates.length === 0) {
-    throw new Error("No Gemini API keys configured.");
+    console.warn("⚠️ AUTO-RELOAD GUARD (Runtime): Gemini queue is empty, attempting to recover...");
+    const envKeys = [
+      process.env.GEMINI_API_KEY, process.env.VITE_GEMINI_API_KEY,
+      process.env.GEMINI_API_KEY_1, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3,
+      process.env.GEMINI_API_KEY_4, process.env.GEMINI_API_KEY_5, process.env.GEMINI_API_KEY_6,
+      process.env.GEMINI_API_KEY_7, process.env.GEMINI_API_KEY_8, process.env.GEMINI_API_KEY_9,
+      process.env.GEMINI_API_KEY_10, process.env.GEMINI_API_KEY_11
+    ].filter(k => k && k.trim() && k !== "undefined" && k !== "null").map(k => k!.trim());
+    
+    const uniqueKeys = [...new Set(envKeys)];
+    if (uniqueKeys.length > 0) {
+       GEMINI_KEYS.push(...uniqueKeys);
+       geminiKeyStates.push(...uniqueKeys.map((key, i) => ({
+         index: i + 1,
+         key,
+         maskedKey: `***${key.slice(-4)}`,
+         status: "active" as const,
+         usageCount: 0,
+         errorCount: 0,
+         lastUsed: null
+       })));
+    }
+
+    if (geminiKeyStates.length === 0) {
+      throw new Error("No Gemini API keys configured.");
+    }
   }
   
   // 1. Recover keys that have been rate limited for over 60 seconds
@@ -704,6 +729,10 @@ for (const k of singleOrKeys) {
   }
 }
 
+if (OPENROUTER_KEYS.length === 0) {
+  console.warn("⚠️ [CRITICAL WARNING]: No OpenRouter API Keys detected in environment variables. Real-time Health Monitor queue will be empty and requests will fail.");
+}
+
 const openRouterKeyStates: KeyState[] = OPENROUTER_KEYS.map((key, i) => ({
   index: i + 1,
   key,
@@ -730,7 +759,31 @@ function addOpenRouterRotationLog(log: Omit<RotationLog, "timestamp" | "id">) {
 
 function getOpenRouterKey(): { key: string; state: KeyState } {
   if (openRouterKeyStates.length === 0) {
-    throw new Error("No OpenRouter API keys configured.");
+    console.warn("⚠️ AUTO-RELOAD GUARD (Runtime): OpenRouter queue is empty, attempting to recover...");
+    const envKeys = [
+      process.env.OPENROUTER_API_KEY, process.env.OPENROUTER_KEY, process.env.VITE_OPENROUTER_API_KEY, process.env.VITE_OPENROUTER_KEY,
+      process.env.OPENROUTER_KEY_1, process.env.OPENROUTER_API_KEY_1, process.env.VITE_OPENROUTER_API_KEY_1, process.env.VITE_OPENROUTER_KEY_1,
+      process.env.OPENROUTER_KEY_2, process.env.OPENROUTER_API_KEY_2, process.env.VITE_OPENROUTER_API_KEY_2, process.env.VITE_OPENROUTER_KEY_2,
+      process.env.OPENROUTER_KEY_3, process.env.OPENROUTER_API_KEY_3, process.env.VITE_OPENROUTER_API_KEY_3, process.env.VITE_OPENROUTER_KEY_3
+    ].filter(k => k && k.trim() && k !== "undefined" && k !== "null").map(k => k!.trim());
+    
+    const uniqueKeys = [...new Set(envKeys)];
+    if (uniqueKeys.length > 0) {
+       OPENROUTER_KEYS.push(...uniqueKeys);
+       openRouterKeyStates.push(...uniqueKeys.map((key, i) => ({
+         index: i + 1,
+         key,
+         maskedKey: `***${key.slice(-4)}`,
+         status: "active" as const,
+         usageCount: 0,
+         errorCount: 0,
+         lastUsed: null
+       })));
+    }
+    
+    if (openRouterKeyStates.length === 0) {
+      throw new Error("No OpenRouter API keys configured.");
+    }
   }
   
   const now = Date.now();
@@ -820,7 +873,30 @@ function addGroqRotationLog(log: Partial<RotationLog>) {
 
 function getGroqKey(): { key: string; state: KeyState } {
   if (groqKeyStates.length === 0) {
-    throw new Error("No Groq API keys configured.");
+    console.warn("⚠️ AUTO-RELOAD GUARD (Runtime): Groq queue is empty, attempting to recover...");
+    const envKeys = [
+      process.env.GROQ_API_KEY, process.env.VITE_GROQ_API_KEY,
+      process.env.GROQ_API_KEY_1, process.env.GROQ_API_KEY_2, process.env.GROQ_API_KEY_3,
+      process.env.GROQ_API_KEY_4, process.env.GROQ_API_KEY_5, process.env.GROQ_API_KEY_6
+    ].filter(k => k && k.trim() && k !== "undefined" && k !== "null").map(k => k!.trim());
+    
+    const uniqueKeys = [...new Set(envKeys)];
+    if (uniqueKeys.length > 0) {
+       GROQ_KEYS.push(...uniqueKeys);
+       groqKeyStates.push(...uniqueKeys.map((key, i) => ({
+         index: i + 1,
+         key,
+         maskedKey: `***${key.slice(-4)}`,
+         status: "active" as const,
+         usageCount: 0,
+         errorCount: 0,
+         lastUsed: null
+       })));
+    }
+    
+    if (groqKeyStates.length === 0) {
+      throw new Error("No Groq API keys configured.");
+    }
   }
   
   const now = Date.now();
@@ -991,7 +1067,7 @@ app.post("/api/proxy/openrouter", async (req, res, next) => {
 
     while (attempts < maxAttempts && !success) {
       const { key, state } = getOpenRouterKey();
-      const currentModel = attempts === 0 ? targetModel : "google/gemma-2-9b-it:free";
+      const currentModel = "google/gemini-2.5-flash:free";
       attempts++;
       try {
         console.log(`[OpenRouter Proxy Route] Attempt ${attempts}: Using key index ${state.index} (${state.maskedKey}) with model ${currentModel}`);
@@ -2059,6 +2135,31 @@ ${reminderSuffix}`;
       return res.status(403).json({ error: "Thao tác không hợp lệ. Sai admin key." });
     }
     
+    // AUTO-RELOAD GUARD (Phục hồi khoá nếu mảng bị xoá rỗng)
+    if (openRouterKeyStates.length === 0) {
+      console.warn("⚠️ AUTO-RELOAD GUARD TRIGGERED: OpenRouter queue is empty, recovering from environment...");
+      const envKeys = [
+        process.env.OPENROUTER_API_KEY, process.env.OPENROUTER_KEY, process.env.VITE_OPENROUTER_API_KEY, process.env.VITE_OPENROUTER_KEY,
+        process.env.OPENROUTER_KEY_1, process.env.OPENROUTER_API_KEY_1, process.env.VITE_OPENROUTER_API_KEY_1, process.env.VITE_OPENROUTER_KEY_1,
+        process.env.OPENROUTER_KEY_2, process.env.OPENROUTER_API_KEY_2, process.env.VITE_OPENROUTER_API_KEY_2, process.env.VITE_OPENROUTER_KEY_2,
+        process.env.OPENROUTER_KEY_3, process.env.OPENROUTER_API_KEY_3, process.env.VITE_OPENROUTER_API_KEY_3, process.env.VITE_OPENROUTER_KEY_3
+      ].filter(k => k && k.trim() && k !== "undefined" && k !== "null").map(k => k!.trim());
+      
+      const uniqueKeys = [...new Set(envKeys)];
+      if (uniqueKeys.length > 0) {
+         OPENROUTER_KEYS.push(...uniqueKeys);
+         openRouterKeyStates.push(...uniqueKeys.map((key, i) => ({
+           index: i + 1,
+           key,
+           maskedKey: `***${key.slice(-4)}`,
+           status: "active" as const,
+           usageCount: 0,
+           errorCount: 0,
+           lastUsed: null
+         })));
+      }
+    }
+
     // reset rate_limited to active if passed 60s
     const now = Date.now();
     geminiKeyStates.forEach(state => {
@@ -2701,9 +2802,7 @@ ${textChunk}`;
               const maxOpenRouterAttempts = Math.min(2, openRouterKeyStates.length); // Try up to 2 OpenRouter keys for speed
               while (openRouterAttempts < maxOpenRouterAttempts && !openRouterSuccess) {
                 const { key, state } = getOpenRouterKey();
-                const currentModel = openRouterAttempts === 0 
-                  ? "meta-llama/llama-3.1-8b-instruct:free" 
-                  : "google/gemma-2-9b-it:free";
+                const currentModel = "google/gemini-2.5-flash:free";
                 openRouterAttempts++;
                 const openRouterController = new AbortController();
                 const openRouterTimeoutId = setTimeout(() => openRouterController.abort(), 60000); // 60s timeout for OpenRouter free models

@@ -17,6 +17,7 @@ const AdminKeysDashboard = lazy(() => import("./pages/AdminKeysDashboard"));
 const AdminCreateCards = lazy(() => import("./pages/AdminCreateCards"));
 const AuthScreen = lazy(() => import("./components/AuthScreen"));
 const VerifyEmailScreen = lazy(() => import("./components/VerifyEmailScreen"));
+const CategoryView = lazy(() => import("./pages/CategoryView"));
 
 import Agent3Widget from "./components/Agent3Widget";
 import { GlobalErrorToast } from "./components/GlobalErrorToast";
@@ -1533,6 +1534,7 @@ export default function App() {
             <Route path="/setup-profile" element={<PageWrapper><SetupProfileScreen /></PageWrapper>} />
             <Route path="/admin/keys" element={<PageWrapper><AdminKeysDashboard /></PageWrapper>} />
             <Route path="/admin/create-cards" element={<PageWrapper><AdminCreateCards /></PageWrapper>} />
+            <Route path="/category/:categoryName" element={<PageWrapper><CategoryView /></PageWrapper>} />
             <Route path="*" element={<PageWrapper><StudentDashboard /></PageWrapper>} />
           </Routes>
         </AnimatePresence>
