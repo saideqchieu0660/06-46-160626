@@ -394,7 +394,7 @@ const safeSetItem = (key: string, value: string) => {
                                 <button
                                   onClick={() => {
                                     const categoryUrl = `${window.location.origin}/category/${encodeURIComponent(subject)}`;
-                                    const shareText = `📚 Danh mục: ${subject}\n👉 Truy cập toàn bộ thẻ: ${categoryUrl}\n\nCác bộ đang có:\n` + subjectDecks.map(deck => `- ${deck.title}`).join('\n');
+                                    const shareText = `📚 Danh mục: ${subject}\n👉 Truy cập toàn bộ thẻ: ${categoryUrl}`;
                                     navigator.clipboard.writeText(shareText).then(() => {
                                       toast.success("Đã sao chép link danh mục!", {
                                         description: "Bây giờ bạn có thể dán (Paste) để gửi cho học viên.",

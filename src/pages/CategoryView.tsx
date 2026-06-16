@@ -21,25 +21,42 @@ export default function CategoryView() {
       return;
     }
 
-    const fetchDecks = async () => {
-      try {
-        const snapshot = await getDocs(collection(db, "sets"));
-        const allDecks: Deck[] = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Deck));
-        
-        let targetCategory = decodedCategory;
-        
-        const filtered = allDecks.filter(d => (d.subject || "Khác") === targetCategory);
+    const loadDecks = () => {
+      const allDecks = store.getDecks();
+      if (allDecks.length > 0) {
+        const targetCategory = decodedCategory.trim().toUpperCase();
+        const filtered = allDecks.filter(d => String(d.subject || "Khác").trim().toUpperCase() === targetCategory);
         setDecks(filtered);
-      } catch (e) {
-        console.error("Error fetching decks:", e);
-        toast.error("Không thể tải dữ liệu danh mục này.");
-      } finally {
         setLoading(false);
       }
     };
 
-    fetchDecks();
+    loadDecks();
 
+    const unsubscribe = store.subscribe(() => {
+      loadDecks();
+    });
+
+    // Also try to query once from firebase just in case store is empty initially
+    const fetchFromFirebase = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, "sets"));
+        const fbDecks: Deck[] = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Deck));
+        const targetCategory = decodedCategory.trim().toUpperCase();
+        const filtered = fbDecks.filter(d => String(d.subject || "Khác").trim().toUpperCase() === targetCategory);
+        setDecks(filtered);
+      } catch (e) {
+        console.error("Error fetching from Firebase:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (store.getDecks().length === 0) {
+        fetchFromFirebase();
+    }
+
+    return () => unsubscribe();
   }, [decodedCategory]);
 
   return (

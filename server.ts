@@ -1395,13 +1395,45 @@ YÊU CẦU QUAN TRỌNG NHẤT:
 Bọc công thức Toán/Lý/Hóa bằng LaTeX (dấu $ hoặc $$). Chỉ trả ra nội dung (markdown).`;
       }
 
-      const responseText = await executeGeminiWithRetry(async (ai) => {
-          const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt
-          });
-          return response.text;
-      });
+      let responseText = "";
+      try {
+        responseText = await executeGeminiWithRetry(async (ai) => {
+            const response = await ai.models.generateContent({
+              model: "gemini-2.5-flash",
+              contents: prompt
+            });
+            return response.text;
+        });
+      } catch (geminiError: any) {
+        console.warn("Agent 2 Gemini Failed, falling back to OpenRouter:", geminiError.message);
+        if (openRouterKeyStates.length > 0) {
+           const { key, state } = getOpenRouterKey();
+           const openRouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+             method: "POST",
+             headers: {
+               "Content-Type": "application/json",
+               "Authorization": `Bearer ${key}`,
+               "HTTP-Referer": "http://localhost:3000",
+               "X-Title": "Henosis Learning App"
+             },
+             body: JSON.stringify({
+               model: "google/gemini-2.5-flash:free",
+               messages: [{ role: "user", content: prompt }],
+               temperature: 0.1
+             })
+           });
+           
+           if (!openRouterRes.ok) throw new Error("OpenRouter Fallback Failed: " + await openRouterRes.text());
+           const data = await openRouterRes.json();
+           responseText = data.choices[0]?.message?.content || "";
+           
+           state.usageCount++;
+           state.lastUsed = new Date();
+           updateKeyMetrics(state.index, "usage");
+        } else {
+           throw geminiError;
+        }
+      }
       
       res.json({ result: responseText });
     } catch (error) {
@@ -1940,14 +1972,47 @@ ${conciseModeGuidance}`;
               mcqPrompt = `YÊU CẦU BẮT BUỘC TỐI CAO: Tạo chính xác ĐÚNG ${qCount} câu hỏi trắc nghiệm MCQ (không được thừa, không được thiếu, bắt buộc phải trả về chính xác đúng ${qCount} object câu hỏi) dựa trên danh sách các thẻ yếu sau đây. \nĐộ khó: ${difficultyGuidance}\nTrả về đúng 1 mảng JSON chứa chính xác đúng ${qCount} object: {"question": "...", "options": ["A...","B...","C...","D..."], "correctIndex": 0..3, "explanation": "..."}. TUYỆT ĐỐI KHÔNG trả về gì khác ngoài mảng JSON.\nDữ liệu hổng kiến thức: ${JSON.stringify(mcqData)}`;
             }
             
-            const responseText = await executeGeminiWithRetry(async (ai) => {
-                 const response = await ai.models.generateContent({
-                     model: "gemini-2.5-flash",
-                     contents: mcqPrompt,
-                     config: { responseMimeType: "application/json" }
-                  });
-                   return response.text;
-            });
+            let responseText = "";
+            try {
+              responseText = await executeGeminiWithRetry(async (ai) => {
+                   const response = await ai.models.generateContent({
+                       model: "gemini-2.5-flash",
+                       contents: mcqPrompt,
+                       config: { responseMimeType: "application/json" }
+                    });
+                     return response.text;
+              });
+            } catch (geminiError: any) {
+              console.warn("Agent 3 Quiz Gemini Failed, falling back to OpenRouter:", geminiError.message);
+              if (openRouterKeyStates.length > 0) {
+                 const { key, state } = getOpenRouterKey();
+                 const openRouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                   method: "POST",
+                   headers: {
+                     "Content-Type": "application/json",
+                     "Authorization": `Bearer ${key}`,
+                     "HTTP-Referer": "http://localhost:3000",
+                     "X-Title": "Henosis Learning App"
+                   },
+                   body: JSON.stringify({
+                     model: "google/gemini-2.5-flash:free",
+                     messages: [{ role: "user", content: mcqPrompt }],
+                     temperature: 0.1,
+                     response_format: { type: "json_object" }
+                   })
+                 });
+                 
+                 if (!openRouterRes.ok) throw new Error("OpenRouter Fallback Failed: " + await openRouterRes.text());
+                 const data = await openRouterRes.json();
+                 responseText = data.choices[0]?.message?.content || "";
+                 
+                 state.usageCount++;
+                 state.lastUsed = new Date();
+                 updateKeyMetrics(state.index, "usage");
+              } else {
+                 throw geminiError;
+              }
+            }
             return res.json({ result: responseText });
           }
       }
@@ -2009,18 +2074,53 @@ ${reminderSuffix}`;
           { role: "user", parts: [{ text: contextualPrompt }] }
       ];
 
-      const responseText = await executeGeminiWithRetry(async (ai) => {
-          const response = await ai.models.generateContent({
-              model: "gemini-2.5-flash",
-              contents: contents,
-              config: {
-                  systemInstruction: systemPrompt,
-                  temperature: responseMode === "direct" && responseStyle !== "detailed" ? 0.3 : 0.8,
-                  maxOutputTokens: 8192
-              }
-          });
-          return response.text || "";
-       });
+      let responseText = "";
+      try {
+        responseText = await executeGeminiWithRetry(async (ai) => {
+            const response = await ai.models.generateContent({
+                model: "gemini-2.5-flash",
+                contents: contents,
+                config: {
+                    systemInstruction: systemPrompt,
+                    temperature: responseMode === "direct" && responseStyle !== "detailed" ? 0.3 : 0.8,
+                    maxOutputTokens: 8192
+                }
+            });
+            return response.text || "";
+         });
+      } catch (geminiError: any) {
+         console.warn("Agent 3 Chat Gemini Failed, falling back to OpenRouter:", geminiError.message);
+         if (openRouterKeyStates.length > 0) {
+            const { key, state } = getOpenRouterKey();
+            const openRouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${key}`,
+                "HTTP-Referer": "http://localhost:3000",
+                "X-Title": "Henosis Learning App"
+              },
+              body: JSON.stringify({
+                model: "google/gemini-2.5-flash:free",
+                messages: [
+                  { role: "system", content: systemPrompt },
+                  { role: "user", content: contextualPrompt }
+                ],
+                temperature: responseMode === "direct" && responseStyle !== "detailed" ? 0.3 : 0.8
+              })
+            });
+            
+            if (!openRouterRes.ok) throw new Error("OpenRouter Fallback Failed: " + await openRouterRes.text());
+            const data = await openRouterRes.json();
+            responseText = data.choices[0]?.message?.content || "";
+            
+            state.usageCount++;
+            state.lastUsed = new Date();
+            updateKeyMetrics(state.index, "usage");
+         } else {
+            throw geminiError;
+         }
+      }
 
       res.json({ result: responseText });
     } catch (error: any) {
