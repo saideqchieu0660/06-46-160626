@@ -623,6 +623,7 @@ export default function StudyRoom() {
   const [finished, setFinished] = useState(false);
   const [isListModalOpen, setIsListModalOpen] = useState(false);
   const [listSearchQuery, setListSearchQuery] = useState("");
+  const [isGeneratingCloze, setIsGeneratingCloze] = useState(false);
 
   useEffect(() => {
     if (finished) {
@@ -1128,8 +1129,7 @@ export default function StudyRoom() {
         if (prev <= 1) {
           clearInterval(intervalId);
           deleteTimerRef.current = null;
-          executeActiveCardDeletion();
-          return null;
+          return 0;
         }
         return prev - 1;
       });
@@ -1179,6 +1179,59 @@ export default function StudyRoom() {
     window.speechSynthesis.speak(utterance);
   };
 
+  const handleGenerateAICloze = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!currentCard || isGeneratingCloze) return;
+    setIsGeneratingCloze(true);
+    try {
+      if (!auth.currentUser) throw new Error("Vui lòng đăng nhập để sử dụng AI.");
+      
+      const res = await safeRequest("/api/automation/hydrate-card", {
+        method: "POST",
+        body: JSON.stringify({
+          front: currentCard.front,
+          wordForm: currentCard.wordForm || "",
+          back: currentCard.back || "",
+        }),
+      });
+      
+      if (!res.ok) throw new Error("API Exception");
+      const data = await res.json();
+      
+      if (data.example) {
+        const targetDeckId = currentCard.originDeckId || deck?.id;
+        if (!targetDeckId) throw new Error("Chưa xác định ID nhóm thẻ.");
+        
+        // Cập nhật Firebase ngay lập tức
+        let docRef = doc(db, "sets", targetDeckId);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const docData = docSnap.data();
+          const docCards: any[] = docData.cards || [];
+          const updatedDocCards = docCards.map((c: any) =>
+            c.id === currentCard.id
+              ? { ...c, example_sentence: data.example }
+              : c
+          );
+          await updateDoc(docRef, { cards: updatedDocCards });
+        }
+        
+        // Update local object & store
+        currentCard.example_sentence = data.example;
+        store.updateCard(targetDeckId, currentCard.id, currentCard.front, currentCard.back, data.example);
+        
+        toast.success("✅ Đã tạo câu ví dụ để đục lỗ thông minh.");
+      } else {
+        toast.error("Không thể tạo câu đục lỗ hợp lý.");
+      }
+    } catch(err: any) {
+      toast.error(err.message || "Lỗi kết nối AI khi tạo câu đục lỗ.");
+      console.error(err);
+    } finally {
+      setIsGeneratingCloze(false);
+    }
+  };
+
   const getClozeSentence = () => {
     if (!currentCard) return "";
     let sentence = currentCard.example_sentence || "";
@@ -1222,29 +1275,49 @@ export default function StudyRoom() {
     const sentenceAfter = sentence.substring(match.index! + match[0].length);
     const hint = targetWord.charAt(0) + "_".repeat(targetWord.length - 1);
     
+    const isFallback = !currentCard?.example_sentence;
+    const isComplexOrLong = currentCard?.front ? (currentCard.front.split(' ').length >= 3 || /[\/≠=()]/.test(currentCard.front) || currentCard.front.length > 20) : false;
+
     return (
-      <p className="text-lg sm:text-xl md:text-2xl font-medium text-zinc-800 dark:text-zinc-200 leading-relaxed text-center px-4">
-        {sentenceBefore}
-        <span 
-          onClick={(e) => {
-            // Ngăn sự kiện click lật thẻ khi bấm vào ô đục lỗ nếu muốn
-            e.stopPropagation();
-            setIsHintRevealed(!isHintRevealed);
-          }}
-          className={cn(
-            "mx-1.5 px-3 py-0.5 rounded-lg border font-bold transition-all inline-block select-none shadow-sm cursor-pointer",
-            isFlipped 
-              ? "bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300 border-green-300 dark:border-green-800" 
-              : isHintRevealed
-                ? "bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 border-blue-300 dark:border-blue-800"
-                : "bg-orange-100 text-orange-800 dark:bg-orange-950/30 dark:text-orange-400 border-orange-350 dark:border-orange-800/50"
-          )}
-          title="Bấm để bật/tắt gợi ý từ này"
-        >
-          {isFlipped ? targetWord : (isHintRevealed ? hint : "________")}
-        </span>
-        {sentenceAfter}
-      </p>
+      <div className="flex flex-col items-center justify-center w-full px-2">
+        <p className="text-lg sm:text-xl md:text-2xl font-medium text-zinc-800 dark:text-zinc-200 leading-relaxed text-center px-4 w-full">
+          {sentenceBefore}
+          <span 
+            onClick={(e) => {
+              // Ngăn sự kiện click lật thẻ khi bấm vào ô đục lỗ nếu muốn
+              e.stopPropagation();
+              if (isFallback) return; // Không cần bật hint nếu chỉ hiển thị ______ fallback xấu
+              setIsHintRevealed(!isHintRevealed);
+            }}
+            className={cn(
+              "mx-1.5 px-3 py-0.5 rounded-lg border font-bold transition-all inline-block select-none shadow-sm cursor-pointer",
+              isFlipped 
+                ? "bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300 border-green-300 dark:border-green-800" 
+                : isHintRevealed
+                  ? "bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 border-blue-300 dark:border-blue-800"
+                  : "bg-orange-100 text-orange-800 dark:bg-orange-950/30 dark:text-orange-400 border-orange-350 dark:border-orange-800/50"
+            )}
+            title="Bấm để bật/tắt gợi ý từ này"
+          >
+            {isFlipped ? targetWord : (isHintRevealed ? hint : "________")}
+          </span>
+          {sentenceAfter}
+        </p>
+
+        {isFallback && isComplexOrLong && (
+           <div className="mt-8 flex flex-col items-center justify-center" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={handleGenerateAICloze}
+                disabled={isGeneratingCloze}
+                className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600 shadow-md transition-all font-medium text-sm disabled:opacity-70 disabled:cursor-wait"
+              >
+                  {isGeneratingCloze ? <RefreshCcw className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+                  {isGeneratingCloze ? "AI Đang xử lý..." : "Agent 2: Sinh câu đục lỗ ngữ cảnh"}
+              </button>
+              <p className="mt-3 text-xs text-zinc-400 dark:text-zinc-500 max-w-xs text-center font-light">Thẻ này hơi phức tạp để đục lỗ chay. Khuyên ngài nên dùng AI tạo ra câu ví dụ ngữ cảnh để học hiệu quả hơn.</p>
+           </div>
+        )}
+      </div>
     );
   };
 
@@ -2667,7 +2740,7 @@ export default function StudyRoom() {
                           <div className="space-y-1">
                             <h4 className="text-base font-bold text-zinc-900 dark:text-zinc-100">Xác nhận xóa thẻ học</h4>
                             <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                              Bạn có chắc chắn muốn xóa? Thẻ sẽ bị xóa sau <span className="font-extrabold text-red-500 text-sm animate-pulse">{deleteCountdown}s</span>...
+                              Bạn có chắc chắn muốn xóa? Nút xác nhận sẽ mở sau <span className="font-extrabold text-red-500 text-sm animate-pulse">{deleteCountdown}s</span>
                             </p>
                           </div>
                           <div className="flex gap-3 w-full">
@@ -2791,7 +2864,7 @@ export default function StudyRoom() {
                           <div className="space-y-1">
                             <h4 className="text-base font-bold text-zinc-900 dark:text-zinc-100">Xác nhận xóa thẻ học</h4>
                             <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                              Bạn có chắc chắn muốn xóa? Thẻ sẽ bị xóa sau <span className="font-extrabold text-red-500 text-sm animate-pulse">{deleteCountdown}s</span>...
+                              Bạn có chắc chắn muốn xóa? Nút xác nhận sẽ mở sau <span className="font-extrabold text-red-500 text-sm animate-pulse">{deleteCountdown}s</span>
                             </p>
                           </div>
                           <div className="flex gap-3 w-full">

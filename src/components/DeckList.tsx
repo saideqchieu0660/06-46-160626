@@ -131,7 +131,10 @@ const safeSetItem = (key: string, value: string) => {
       
       querySnapshot.forEach((docSnap) => {
         const data = docSnap.data();
-        if (data && data.subject === oldName) {
+        const currentSubject = String(data?.subject || "Tự chọn").trim().toUpperCase();
+        const targetSubject = oldName.trim().toUpperCase();
+        
+        if (data && currentSubject === targetSubject) {
           batch.update(docSnap.ref, { subject: trimmedNewName });
           count++;
         }
@@ -141,7 +144,11 @@ const safeSetItem = (key: string, value: string) => {
         toast.promise(batch.commit(), {
           loading: "Đang cập nhật danh mục...",
           success: () => {
-             const updatedLocalDecks = store.getDecks().map(d => d.subject === oldName ? { ...d, subject: trimmedNewName } : d);
+             const targetBase = oldName.trim().toUpperCase();
+             const updatedLocalDecks = store.getDecks().map(d => {
+               const s = String(d.subject || "Tự chọn").trim().toUpperCase();
+               return s === targetBase ? { ...d, subject: trimmedNewName } : d;
+             });
              store.setDecksLocally(updatedLocalDecks);
              // Let the realtime listener handle any UI updates.
              return "Đã đổi tên danh mục thành công!";

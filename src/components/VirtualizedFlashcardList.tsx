@@ -26,6 +26,48 @@ const FlashcardRow = React.memo(function FlashcardRow({
   onDelete,
   isUpdatingCard
 }: FlashcardRowProps) {
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+
+  // Auto-hide confirmation after 3 seconds
+  useEffect(() => {
+    if (confirmingDelete) {
+      const timeout = setTimeout(() => setConfirmingDelete(false), 3000);
+      return () => clearTimeout(timeout);
+    }
+  }, [confirmingDelete]);
+
+  if (confirmingDelete) {
+    return (
+      <div 
+        className="p-2 bg-red-500/10 dark:bg-red-500/20 rounded-lg border border-red-500/30 flex justify-between items-center gap-3 transition-colors h-[52px]"
+        style={{ contentVisibility: 'auto', containIntrinsicSize: '0 52px' }}
+      >
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-bold text-red-600 dark:text-red-400">Bạn có chắc chắn muốn xóa thẻ này?</p>
+          <p className="text-[10px] text-zinc-500 dark:text-zinc-400">Hành động này không thể hoàn tác.</p>
+        </div>
+        <div className="flex gap-2 shrink-0">
+          <button
+            onClick={() => setConfirmingDelete(false)}
+            className="px-2 py-1 text-[10px] font-bold rounded bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-700 dark:hover:bg-zinc-600 transition"
+          >
+            Hủy bỏ
+          </button>
+          <button
+            onClick={() => {
+              setConfirmingDelete(false);
+              onDelete(card);
+            }}
+            disabled={isUpdatingCard}
+            className="px-2 py-1 text-[10px] font-bold rounded bg-red-600 hover:bg-red-700 text-white transition disabled:opacity-50"
+          >
+            Xác nhận xóa
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div 
       className="p-2 bg-zinc-100/60 dark:bg-zinc-800/40 rounded-lg border border-zinc-200/40 dark:border-zinc-700/20 flex justify-between items-center gap-3 hover:border-orange-500/20 transition-colors h-[52px]"
@@ -64,7 +106,7 @@ const FlashcardRow = React.memo(function FlashcardRow({
           <Edit3 className="w-3.5 h-3.5 text-blue-500" />
         </button>
         <button
-          onClick={() => onDelete(card)}
+          onClick={() => setConfirmingDelete(true)}
           disabled={isUpdatingCard}
           className="p-1 rounded hover:bg-red-500/10 text-red-500 opacity-70 hover:opacity-100 transition-opacity disabled:opacity-30"
           title="Xóa thẻ"
