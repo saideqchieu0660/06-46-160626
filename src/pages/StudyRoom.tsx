@@ -50,7 +50,8 @@ import { motion } from "motion/react";
 import { triggerCelebration } from "../lib/celebration";
 import { v4 as uuidv4 } from "uuid";
 import { db, auth, FirebaseListenerManager } from "../lib/firebase";
-import { doc, onSnapshot, collection, getDoc, setDoc } from "firebase/firestore";
+import { doc, onSnapshot, collection, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { toast } from "sonner";
 import {
   ResponsiveContainer,
   AreaChart,

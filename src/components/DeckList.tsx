@@ -140,21 +140,30 @@ const safeSetItem = (key: string, value: string) => {
         }
       });
       
+      let countLocal = 0;
+      const targetBase = oldName.trim().toUpperCase();
+      const updatedLocalDecks = store.getDecks().map(d => {
+        const s = String(d.subject || "Tự chọn").trim().toUpperCase();
+        if (s === targetBase) {
+          countLocal++;
+          return { ...d, subject: trimmedNewName };
+        }
+        return d;
+      });
+
       if (count > 0) {
         toast.promise(batch.commit(), {
           loading: "Đang cập nhật danh mục...",
           success: () => {
-             const targetBase = oldName.trim().toUpperCase();
-             const updatedLocalDecks = store.getDecks().map(d => {
-               const s = String(d.subject || "Tự chọn").trim().toUpperCase();
-               return s === targetBase ? { ...d, subject: trimmedNewName } : d;
-             });
              store.setDecksLocally(updatedLocalDecks);
              // Let the realtime listener handle any UI updates.
              return "Đã đổi tên danh mục thành công!";
           },
           error: "Đã có lỗi xảy ra khi đổi tên danh mục, vui lòng thử lại.",
         });
+      } else if (countLocal > 0) {
+        store.setDecksLocally(updatedLocalDecks);
+        toast.success("Đã đổi tên danh mục cục bộ thành công!");
       } else {
         toast.info("Không có bộ thẻ nào cần đổi tên trong danh mục này.");
       }
@@ -221,9 +230,9 @@ const safeSetItem = (key: string, value: string) => {
         return timeA - timeB;
       });
     } else if (sortOrder === "az") {
-      result.sort((a, b) => a.title.localeCompare(b.title, 'vi'));
+      result.sort((a, b) => a.title.localeCompare(b.title, 'vi', { numeric: true }));
     } else if (sortOrder === "za") {
-      result.sort((a, b) => b.title.localeCompare(a.title, 'vi'));
+      result.sort((a, b) => b.title.localeCompare(a.title, 'vi', { numeric: true }));
     }
 
     // Always sort pinned items to the top if not grouping by subject
@@ -341,7 +350,7 @@ const safeSetItem = (key: string, value: string) => {
               {Object.entries(groupedDecks).sort(([subjectA], [subjectB]) => {
                 if (subjectA === "📌 ĐÃ GHIM") return -1;
                 if (subjectB === "📌 ĐÃ GHIM") return 1;
-                return subjectA.localeCompare(subjectB);
+                return subjectA.localeCompare(subjectB, 'vi', { numeric: true });
               }).map(([subject, subjectDecks]) => (
                 <div key={subject} className="space-y-8 animate-in fade-in duration-300">
                   {/* Category Header Bar with Horizontal Control Buttons */}
