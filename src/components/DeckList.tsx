@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
-import { Play, BookOpen, Search, X, ChevronLeft, ChevronRight, Sparkles, Pin, PinOff, Clock, Check } from 'lucide-react';
+import { Play, BookOpen, Search, X, ChevronLeft, ChevronRight, Sparkles, Pin, PinOff, Clock, Check, Share2, Edit3 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { Deck, store } from '../lib/store';
 import { useTheme } from '../components/ThemeProvider';
@@ -137,15 +138,22 @@ const safeSetItem = (key: string, value: string) => {
       });
       
       if (count > 0) {
-        await batch.commit();
-        const updatedLocalDecks = store.getDecks().map(d => d.subject === oldName ? { ...d, subject: trimmedNewName } : d);
-        store.setDecksLocally(updatedLocalDecks);
-        // Page will refresh or the store trigger will update UI as StudentDashboard reacts to store if hooked, or user can reload.
-        window.location.reload(); 
+        toast.promise(batch.commit(), {
+          loading: "Đang cập nhật danh mục...",
+          success: () => {
+             const updatedLocalDecks = store.getDecks().map(d => d.subject === oldName ? { ...d, subject: trimmedNewName } : d);
+             store.setDecksLocally(updatedLocalDecks);
+             // Let the realtime listener handle any UI updates.
+             return "Đã đổi tên danh mục thành công!";
+          },
+          error: "Đã có lỗi xảy ra khi đổi tên danh mục, vui lòng thử lại.",
+        });
+      } else {
+        toast.info("Không có bộ thẻ nào cần đổi tên trong danh mục này.");
       }
     } catch (err) {
       console.error("Error renaming category:", err);
-      alert("Đã có lỗi xảy ra khi đổi tên danh mục.");
+      toast.error("Đã có lỗi xảy ra khi đổi tên danh mục.");
     } finally {
       setIsSavingCategoryName(false);
       setEditingCategory(null);
@@ -369,16 +377,35 @@ const safeSetItem = (key: string, value: string) => {
                           <h4 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight uppercase flex items-center gap-2">
                             {subject}
                             {isAdmin && subject !== "📌 ĐÃ GHIM" && (
-                              <button
-                                onClick={() => {
-                                  setEditingCategory(subject);
-                                  setNewCategoryName(subject);
-                                }}
-                                className="ml-2 text-zinc-400 hover:text-orange-500 p-1.5 rounded-lg hover:bg-orange-100 dark:hover:bg-zinc-800 transition"
-                                title="Đổi tên danh mục"
-                              >
-                                <Sparkles className="w-4 h-4" />
-                              </button>
+                              <div className="flex items-center ml-2">
+                                <button
+                                  onClick={() => {
+                                    setEditingCategory(subject);
+                                    setNewCategoryName(subject);
+                                  }}
+                                  className="text-zinc-400 hover:text-orange-500 p-1.5 rounded-lg hover:bg-orange-100 dark:hover:bg-zinc-800 transition"
+                                  title="Đổi tên danh mục"
+                                >
+                                  <Edit3 className="w-5 h-5" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    const linksText = `📚 Danh mục: ${subject}\n\n` + subjectDecks.map(deck => `- ${deck.title}:\n  ${window.location.origin}/study/${deck.id}`).join('\n\n');
+                                    navigator.clipboard.writeText(linksText).then(() => {
+                                      toast.success("Đã sao chép link danh mục!", {
+                                        description: "Bây giờ bạn có thể dán (Paste) để gửi cho học viên.",
+                                      });
+                                    }).catch((err) => {
+                                      console.error("Lỗi khi copy: ", err);
+                                      toast.error("Không thể sao chép, vui lòng thử lại.");
+                                    });
+                                  }}
+                                  className="text-zinc-400 hover:text-blue-500 p-1.5 rounded-lg hover:bg-blue-100 dark:hover:bg-zinc-800 transition"
+                                  title="Chia sẻ toàn bộ đường link danh mục này"
+                                >
+                                  <Share2 className="w-5 h-5" />
+                                </button>
+                              </div>
                             )}
                           </h4>
                         )}

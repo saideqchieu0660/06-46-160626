@@ -2312,7 +2312,7 @@ export default function StudentDashboard() {
                <DeckList decks={decks.slice(0, 4)} showSearch={false} />
             ) : (
                <div className="glass p-4 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 animate-in fade-in duration-300">
-                  <DeckList decks={decks} showSearch={true} groupBySubject={true} onCategoryQuiz={(subject, subjectDecks) => setActiveQuizSetup({ subject, decks: subjectDecks })} onCategoryReviewHardCards={startCategoryRemindLaterStudy} onCategoryStudyAll={startCategoryStudyAll} isAdmin={user?.role === 'admin' || user?.role === 'Admin'} />
+                  <DeckList decks={decks} showSearch={true} groupBySubject={true} onCategoryQuiz={(subject, subjectDecks) => setActiveQuizSetup({ subject, decks: subjectDecks })} onCategoryReviewHardCards={startCategoryRemindLaterStudy} onCategoryStudyAll={startCategoryStudyAll} isAdmin={user?.role === 'admin' || user?.role === 'Admin' || user?.role === 'teacher'} />
                </div>
             )}
 
@@ -2544,7 +2544,7 @@ export default function StudentDashboard() {
           </div>
 
           <div className="glass p-6 md:p-8 rounded-3xl border border-zinc-200/50 dark:border-zinc-800/50 bg-white/40 dark:bg-black/40 backdrop-blur-xl shadow-xl">
-            <DeckList decks={decks} showSearch={true} groupBySubject={true} onCategoryQuiz={(subject, subjectDecks) => setActiveQuizSetup({ subject, decks: subjectDecks })} onCategoryReviewHardCards={startCategoryRemindLaterStudy} onCategoryStudyAll={startCategoryStudyAll} isAdmin={user?.role === 'admin' || user?.role === 'Admin'} />
+            <DeckList decks={decks} showSearch={true} groupBySubject={true} onCategoryQuiz={(subject, subjectDecks) => setActiveQuizSetup({ subject, decks: subjectDecks })} onCategoryReviewHardCards={startCategoryRemindLaterStudy} onCategoryStudyAll={startCategoryStudyAll} isAdmin={user?.role === 'admin' || user?.role === 'Admin' || user?.role === 'teacher'} />
           </div>
         </motion.div>
       )}

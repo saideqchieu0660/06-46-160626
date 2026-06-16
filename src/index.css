@@ -38,14 +38,6 @@
     animation: none !important;
   }
 
-  /* KILL BACKDROP BLUR, SHADOWS, AND ROUNDED CORNERS GLOBALLY FOR GREEK DIGITAL OLYMPUS AESTHETIC AND 60FPS */
-  * {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    box-shadow: none !important; /* Stripping heavy shadows */
-    border-radius: 0 !important; /* Strict sharp 90-degree corners like marble blocks */
-  }
-
   a, button, [role="button"], input, select, textarea, .glass, .card, .nav-button-ripple {
     will-change: transform, opacity;
   }
@@ -53,7 +45,7 @@
   *:focus-visible {
     outline: 1px solid rgba(249, 115, 22, 0.5);
     outline-offset: 2px;
-    border-radius: 0;
+    border-radius: 0.5rem;
     transition: outline-color 0.15s ease-out;
   }
 }
@@ -281,15 +273,15 @@ svg[class*="lucide"] {
 
 /* Layer 1: Ethereal Glass / Minimalism */
 .card-3d, .glass {
-  @apply relative text-left bg-white dark:bg-zinc-950 rounded-xl transition-all duration-300;
+  @apply relative text-left bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md rounded-2xl transition-all duration-300;
   border: 1px solid rgba(0, 0, 0, 0.05); /* Crisp line border */
-  box-shadow: none !important;
-  background-image: none !important;
+  box-shadow: 0 4px 24px -6px rgba(0, 0, 0, 0.05), 0 8px 16px -8px rgba(0, 0, 0, 0.02);
   will-change: transform;
 }
 
 .dark .card-3d, .dark .glass {
   border: 1px solid rgba(255, 255, 255, 0.05); /* Crisp dark mode border */
+  box-shadow: 0 4px 24px -6px rgba(0, 0, 0, 0.4), 0 8px 16px -8px rgba(0, 0, 0, 0.2);
 }
 
 .card-3d::before, .glass::before, .card-3d::after, .glass::after {
@@ -306,8 +298,8 @@ svg[class*="lucide"] {
 
 /* Layer 2: Ethereal Buttons */
 .btn-3d {
-  @apply relative overflow-hidden transition-all duration-200 ease-out font-light rounded-lg tracking-wide border;
-  box-shadow: none !important;
+  @apply relative overflow-hidden transition-all duration-200 ease-out font-light rounded-xl tracking-wide border;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.05);
   background: transparent;
   border-color: rgba(0, 0, 0, 0.1);
 }
@@ -322,40 +314,42 @@ svg[class*="lucide"] {
 
 @media (hover: hover) {
   .btn-3d:hover {
-    transform: none;
+    transform: translateY(-1px);
     background: rgba(249, 115, 22, 0.05);
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.1);
   }
 }
 
 .btn-3d:active {
-  transform: translateY(2px) scale(0.97);
+  transform: translateY(1px) scale(0.98);
 }
 
 .btn-3d-primary {
-  @apply text-white border-none bg-orange-600 dark:bg-orange-500;
-  box-shadow: none !important;
+  @apply text-white border-none bg-orange-600 dark:bg-orange-500 rounded-xl transition-all;
+  box-shadow: 0 4px 12px -2px rgba(234, 88, 12, 0.3);
 }
 
 @media (hover: hover) {
   .btn-3d-primary:hover {
     @apply bg-orange-700 dark:bg-orange-600;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px -2px rgba(234, 88, 12, 0.4);
   }
 }
 
 /* Inputs & Form Fields */
 .input-3d {
   @apply bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 rounded-xl transition-all duration-300 ease-out outline-none focus:ring-1 focus:ring-orange-500/50;
-  box-shadow: none !important;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
 }
 
 /* Layer 3: Glass Modals (Highest Z-index) */
 .modal-glass-overlay {
-  @apply fixed inset-0 z-40 bg-zinc-100/80 dark:bg-zinc-950/80 transition-all duration-300 ease-out;
-  backdrop-filter: none !important;
+  @apply fixed inset-0 z-40 bg-zinc-100/60 dark:bg-zinc-950/80 backdrop-blur-md transition-all duration-300 ease-out;
 }
 .modal-glass-content {
-  @apply relative z-50 bg-white dark:bg-zinc-950 border border-black/5 dark:border-white/10 transition-all duration-300 ease-out sm:rounded-[2rem] overflow-hidden;
-  box-shadow: none !important;
+  @apply relative z-50 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl border border-black/5 dark:border-white/10 transition-all duration-300 ease-out sm:rounded-[2rem] overflow-hidden;
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.15), 0 16px 24px -16px rgba(0,0,0,0.1);
 }
 
 /* 3D Flip Card CSS */
