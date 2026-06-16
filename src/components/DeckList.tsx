@@ -376,8 +376,8 @@ const safeSetItem = (key: string, value: string) => {
                         ) : (
                           <h4 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight uppercase flex items-center gap-2">
                             {subject}
-                            {isAdmin && subject !== "📌 ĐÃ GHIM" && (
-                              <div className="flex items-center ml-2">
+                            <div className="flex items-center ml-2">
+                              {isAdmin && subject !== "📌 ĐÃ GHIM" && (
                                 <button
                                   onClick={() => {
                                     setEditingCategory(subject);
@@ -388,26 +388,29 @@ const safeSetItem = (key: string, value: string) => {
                                 >
                                   <Edit3 className="w-5 h-5" />
                                 </button>
+                              )}
+                              
+                              {subject !== "📌 ĐÃ GHIM" && (
                                 <button
                                   onClick={() => {
-                                  const categoryUrl = `${window.location.origin}/category/${encodeURIComponent(subject)}`;
-                                  const shareText = `📚 Danh mục: ${subject}\n👉 Truy cập toàn bộ thẻ: ${categoryUrl}\n\nCác bộ đang có:\n` + subjectDecks.map(deck => `- ${deck.title}`).join('\n');
-                                  navigator.clipboard.writeText(shareText).then(() => {
-                                    toast.success("Đã sao chép link danh mục!", {
-                                      description: "Bây giờ bạn có thể dán (Paste) để gửi cho học viên.",
+                                    const categoryUrl = `${window.location.origin}/category/${encodeURIComponent(subject)}`;
+                                    const shareText = `📚 Danh mục: ${subject}\n👉 Truy cập toàn bộ thẻ: ${categoryUrl}\n\nCác bộ đang có:\n` + subjectDecks.map(deck => `- ${deck.title}`).join('\n');
+                                    navigator.clipboard.writeText(shareText).then(() => {
+                                      toast.success("Đã sao chép link danh mục!", {
+                                        description: "Bây giờ bạn có thể dán (Paste) để gửi cho học viên.",
+                                      });
+                                    }).catch((err) => {
+                                      console.error("Lỗi khi copy: ", err);
+                                      toast.error("Không thể sao chép, vui lòng thử lại.");
                                     });
-                                  }).catch((err) => {
-                                    console.error("Lỗi khi copy: ", err);
-                                    toast.error("Không thể sao chép, vui lòng thử lại.");
-                                  });
-                                }}
+                                  }}
                                   className="text-zinc-400 hover:text-blue-500 p-1.5 rounded-lg hover:bg-blue-100 dark:hover:bg-zinc-800 transition"
                                   title="Chia sẻ toàn bộ đường link danh mục này"
                                 >
                                   <Share2 className="w-5 h-5" />
                                 </button>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </h4>
                         )}
                         <span className="text-sm sm:text-base font-black opacity-60 text-orange-600 dark:text-orange-400">
